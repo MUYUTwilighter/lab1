@@ -1,95 +1,121 @@
-import Image from "next/image";
-import styles from "./page.module.css";
+"use client";
+
+import {useEffect, useState} from "react";
+import {convert} from "@/lib/currency";
+import {
+    Box, Button,
+    Container,
+    Divider,
+    FormControl,
+    InputLabel,
+    MenuItem,
+    Paper,
+    Select,
+    Stack,
+    TextField,
+    Typography,
+} from "@mui/material";
+
+export const CURRENCIES = [
+    "USD", "EUR", "GBP", "JPY", "AUD", "CAD", "CHF", "CNY", "SEK", "NZD"
+];
 
 export default function Home() {
-  return (
-    <div className={styles.page}>
-      <main className={styles.main}>
-        <Image
-          className={styles.logo}
-          src="/next.svg"
-          alt="Next.js logo"
-          width={180}
-          height={38}
-          priority
-        />
-        <ol>
-          <li>
-            Get started by editing <code>app/page.js</code>.
-          </li>
-          <li>Save and see your changes instantly.</li>
-        </ol>
+    const [from, setFrom] = useState("USD");
+    const [to, setTo] = useState("CNY");
+    const [amount, setAmount] = useState(1);
+    const [result, setResult] = useState(NaN);
 
-        <div className={styles.ctas}>
-          <a
-            className={styles.primary}
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className={styles.logo}
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={20}
-              height={20}
-            />
-            Deploy now
-          </a>
-          <a
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-            className={styles.secondary}
-          >
-            Read our docs
-          </a>
-        </div>
-      </main>
-      <footer className={styles.footer}>
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/file.svg"
-            alt="File icon"
-            width={16}
-            height={16}
-          />
-          Learn
-        </a>
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/window.svg"
-            alt="Window icon"
-            width={16}
-            height={16}
-          />
-          Examples
-        </a>
-        <a
-          href="https://nextjs.org?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Image
-            aria-hidden
-            src="/globe.svg"
-            alt="Globe icon"
-            width={16}
-            height={16}
-          />
-          Go to nextjs.org →
-        </a>
-      </footer>
-    </div>
-  );
+    useEffect(() => {
+        if (Number.isFinite(amount)) {
+            convert(amount, from, to).then(result => setResult(result)).catch(() => setResult(NaN));
+        } else {
+            setResult(NaN);
+        }
+    }, [from, to, amount]);
+
+    return <Container maxWidth="sm" sx={{py: 6}}>
+        <Paper elevation={3} sx={{p: 4, borderRadius: 4}}>
+            <Stack spacing={3}>
+                <Box>
+                    <Typography variant="h5" fontWeight={700} gutterBottom>
+                        Currency Conversion
+                    </Typography>
+                    <Typography variant="body2" color="text.secondary">
+                        Select the currencies and enter a value to convert between them.
+                    </Typography>
+                </Box>
+
+                <Stack direction={{xs: "column", sm: "row"}} spacing={2}>
+                    <FormControl fullWidth>
+                        <InputLabel id="from-scale-label">From Scale</InputLabel>
+                        <Select
+                            labelId="from-scale-label"
+                            value={from}
+                            label="Base Currency"
+                            onChange={e => setFrom(e.target.value)}
+                            variant={"outlined"}>
+                            {CURRENCIES.map((c) => (
+                                <MenuItem key={c} value={c}>
+                                    {c}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+
+                    <Button onClick={() => {
+                        setFrom(to);
+                        setTo(from);
+                    }}>
+                        ⇄
+                    </Button>
+
+                    <FormControl fullWidth>
+                        <InputLabel id="to-scale-label">To Scale</InputLabel>
+                        <Select
+                            labelId="to-scale-label"
+                            value={to}
+                            label="Target Currency"
+                            onChange={e => setTo(e.target.value)}
+                            variant={"outlined"}>
+                            {CURRENCIES.map((s) => (
+                                <MenuItem key={s} value={s}>
+                                    {s}
+                                </MenuItem>
+                            ))}
+                        </Select>
+                    </FormControl>
+                </Stack>
+
+                <TextField
+                    label="Input Value"
+                    type="number"
+                    fullWidth
+                    value={Number.isFinite(amount) ? amount : ""}
+                    onChange={(e) => {
+                        const v = e.target.value;
+                        if (v === "") {
+                            setAmount(NaN);
+                            return;
+                        }
+                        const n = Number(v);
+                        setAmount(n);
+                    }}
+                    error={!Number.isFinite(amount)}
+                    helperText={!Number.isFinite(amount) ? "Not a valid number" : ""}
+                />
+
+                <Divider/>
+
+                <Box>
+                    <Typography variant="overline" color="text.secondary">
+                        Result
+                    </Typography>
+                    <Typography variant="h4" fontWeight={800} sx={{wordBreak: "break-all"}}>
+                        {Number.isFinite(result) ? Math.round(result * 100) / 100 : "—"}
+                    </Typography>
+                </Box>
+            </Stack>
+        </Paper>
+    </Container>;
 }
